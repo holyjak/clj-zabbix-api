@@ -3,8 +3,6 @@
 
 (declare post-raw)
 
-(def ZABBIX-URL "https://zabbix.example.com/api_jsonrpc.php")
-
 (defn login [{:keys [url user password]}]
        "Authorize with Zabbix, return a map keeping the auth. token.
         Ex.: (login \"https://zabbix.example.com/api_jsonrpc.php\" \"me@here\" \"secret\")"
@@ -59,7 +57,7 @@
   ;; Zabbix server (otherwise 401) while user.authenticate is checked by
   ;; Zabbix itself (=> Invalid params - Not authorized if no auth. token)
   (let
-      [response (http/post ZABBIX-URL
+      [response (http/post url
                            {:basic-auth [user password]
                             :form-params {
                                           :jsonrpc "2.0" :id 1
