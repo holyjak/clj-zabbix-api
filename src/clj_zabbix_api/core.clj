@@ -50,7 +50,8 @@
   ;; trigger.update is broken, fixed in Zabbix 1.8.4 https://support.zabbix.com/browse/ZBX-3267
   ((:post zbx) "trigger.update" {:triggerid triggerid :status (if enable ENABLED DISABLED)}))
 
-(defn- post-raw [{:keys [url user password method params auth] :or {:auth nil}}]
+;; Note: I'd prefer defn- but then I couldn't redefine it in the test
+(defn post-raw [{:keys [url user password method params auth] :or {:auth nil}}]
   "Post a call to Zabbix, returning the response result JSON as a Clojure map.
   :params is a Clojure map with keys"
   ;; Note: In our setup, basuc-auth is required for access to the
@@ -89,6 +90,6 @@
 
 ;; For testing:
 ;; (def zbx (login {
-;;                  :url "https://zabbix.example.com/api_jsonrpc.php"
+;;                  :url "https://zabbix-server.example.com/api_jsonrpc.php"
 ;;                  :user "me"
 ;;                  :password "secret"}))
