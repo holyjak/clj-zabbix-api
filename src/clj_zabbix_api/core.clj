@@ -15,15 +15,14 @@
               })]
          ;; Derive from post-raw by binding the known parameters
          (do
-           (println "Authenticated w/ Zabbix:" auth-token)
-		         {:post (fn post-call [method params]
-		                  (post-raw {:url url
-		                             :user user
-		                             :password password
-		                             :auth auth-token
-		                             :method method
-		                             :params params
-		                             }))})))
+           ;;(println "Authenticated w/ Zabbix:" auth-token)
+           (fn post-auth [method params]
+                (post-raw {:url url
+                           :user user
+                           :password password
+                           :auth auth-token
+                           :method method
+                           :params params})))))
 
 (defn trigger-get [zbx group name]
   "Get triggers with the given name for hosts in the given host group.
@@ -32,7 +31,7 @@
                      :group group, ;; filter by host group name
                      "select_hosts" "extend" ;; include host names
                      :filter {:description name}}
-        triggers ((:post zbx) "trigger.get" req)]
+        triggers (zbx "trigger.get" req)]
     ;; Extract only the info needed: id, status (enabled?), host dns
     ;; (there can be multiple hosts but in our case there is always only 1)
     (map (fn [t]
@@ -48,7 +47,9 @@
 
 (defn trigger-update [zbx triggerid enable]
   ;; trigger.update is broken, fixed in Zabbix 1.8.4 https://support.zabbix.com/browse/ZBX-3267
-  ((:post zbx) "trigger.update" {:triggerid triggerid :status (if enable ENABLED DISABLED)}))
+  (zbx "trigger.update"
+               {:triggerid triggerid,
+                :status (if enable ENABLED DISABLED)}))
 
 ;; Note: I'd prefer defn- but then I couldn't redefine it in the test
 (defn post-raw [{:keys [url user password method params auth] :or {:auth nil}}]
@@ -73,9 +74,12 @@
       (do
         (println "RESPONSE: " body)
         (throw (Exception. (str "Error executing " method ": " (:error body) ". Params: " params))))
-      (:result body))))
+      (do
+        ;;(println "RESULT:")
+        ;;(clojure.pprint/pprint (:result body))
+        (:result body)))))
 
-(defn disable-triggers [zbx]
+#_(defn disable-triggers [zbx]
   "Do it all: disable a particular trigger on all data nodes in a group (on not others)"
   (let [triggers (trigger-get zbx "Analytics production" "Processor load is too high on {HOSTNAME}")
         triggers2disable (filter
